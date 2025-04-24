@@ -1,0 +1,43 @@
+name: Install Dependencies from Cloudsmith with Poetry
+
+on:
+  push:
+    branches: [ main ]
+  pull_request:
+    branches: [ main ]
+
+jobs:
+  poetry-cloudsmith-install:
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Set up Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: '3.11'  # Adjust as needed
+
+      - name: Install Poetry
+        run: |
+          curl -sSL https://install.python-poetry.org | python3 -
+          echo "$HOME/.local/bin" >> $GITHUB_PATH
+
+      - name: Set Cloudsmith credentials
+        env:
+          USERNAME: ${{ secrets.CLOUDSMITH_USERNAME }}
+          PASSWORD: ${{ secrets.CLOUDSMITH_API_KEY }}
+        run: |
+          echo "Setting environment variables for Cloudsmith..."
+          echo "POETRY_HTTP_BASIC_CLOUDSMITH_USERNAME=$USERNAME" >> $GITHUB_ENV
+          echo "POETRY_HTTP_BASIC_CLOUDSMITH_PASSWORD=$PASSWORD" >> $GITHUB_ENV
+
+      - name: Configure Poetry (optional)
+        run: |
+          poetry config virtualenvs.create true
+          poetry config virtualenvs.in-project true
+
+      - name: Install dependencies from Cloudsmith
+        run: |
+          poetry install
